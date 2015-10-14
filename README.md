@@ -3,7 +3,6 @@ es6-guide
 
 
 ### let命令
-
 1.  let声明的变量，只有所在的代码块内有效，let不像var一样，存在变量提升和函数提升现象
 2.  封闭作用域 只要块级作用域内存在let命令，它所声明的变量，不再受外部的影响，没有声明就不能使用
 
@@ -142,6 +141,7 @@ es6-guide
     `Hello ${name}, \'引号\'how are you ${time}?` // Hello Bob, '引号'how are you today?
     ${name}作为插值，输出表达式结果
     ````
+    
 ### 数值扩展
 1.  Number
     * Number.isFinite()用来检查一个数值是否非无穷（infinity）
