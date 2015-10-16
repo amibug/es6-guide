@@ -26,7 +26,7 @@ ECMAScript 6 学习笔记
     ````
 
 ### const命令
-1.  const也用来声明变量，但是声明的是常量。一旦声明，常量的值就不能改变，对常量重新赋值不会报错，只会默默地失败
+1.  const也用来声明变量，但是声明的是常量,常量也是不提升的。一旦声明，常量的值就不能改变，对常量重新赋值不会报错，只会默默地失败
 
 
 ### 变量解构赋值
@@ -298,3 +298,103 @@ ECMAScript 6 学习笔记
     *空位的处理规则非常不统一，建议避免出现空位*
 9.  数组推导(ES7)，可以等价于map()和filter()
 10. Array.observe()，Array.unobserve()(ES7)，用于监听（取消监听）数组的变化，指定回调函数。
+
+### 函数扩展
+1.  函数默认值设置
+    参数默认值可以与解构赋值，联合起来使用，参数默认值可以与解构赋值，联合起来使用定义了默认值的参数，必须是函数的尾参数，其后不能再有其他无默认值的参数。这是因为有了默认值以后，该参数可以省略，只有位于尾部，才可能判断出到底省略了哪些参数。
+    ```
+    ES6之前，当实参（0, ''）类型隐式转为false时，参数还是被设置成默认值，这不是我们想要的
+    function log(x, y) {
+      y = y || 'World';
+      console.log(x, y);
+    }
+
+    log('Hello', '') // Hello World
+    log('Hello', 0) // Hello World
+    log('Hello', 'China') // Hello China
+
+    ES6 实参为undefined，将触发该参数等于默认值，null则没有这个效果
+    function log(x, y = 'World') {
+      console.log(x, y);
+    }
+    log('Hello', '') // Hello ''
+    log('Hello', 0) // Hello 0
+    log('Hello', 'China') // Hello China
+    ```
+
+2.  reset参数
+    rest参数（形式为“...变量名”），rest参数之后不能再有其他参数（即只能是最后一个参数），否则会报错，用于获取函数的多余参数，这样就不需要使用arguments对象了。rest参数搭配的变量是一个数组，该变量将多余的参数放入数组中
+    **rest参数代替arguments变量**
+    ```
+    // arguments变量的写法
+    const sortNumbers = () =>
+      Array.prototype.slice.call(arguments).sort();
+
+    // rest参数的写法
+    const sortNumbers = (...numbers) => numbers.sort();
+    ```
+
+    ```
+    // 将剩余的实参包装成一个array-items
+    function push(array, ...items) {
+      items.forEach(function(item) {
+        array.push(item);
+        console.log(item);
+      });
+    }
+
+    var a = [];
+    push(a, 1, 2, 3)
+    ```
+
+3.  扩展知识要点spread运算符(...)
+    ```
+    在函数新参中使用（reset参数的用法，items会初始化成数组）
+    function push(array, ...items) {
+      items.forEach(function(item) {
+        array.push(item);
+        console.log(item);
+      });
+    }
+    var a = [];
+    push(a, 1, 2, 3);
+
+    const [first, ...rest] = ["foo", "bar", "baz"];
+    first // "foo"
+    rest  // ["bar","baz"]
+
+    操作数组，将一个数组转为用逗号分隔的参数序列
+    var numbers = [4, 38];
+    add(...numbers) // 42
+    等同于
+    add(4, 38) // 42
+    ```
+
+4.  箭头函数=>
+    ```
+    (a, b)=>{ a + b }
+    等同于
+    function(a, b){
+        return a + b;
+    }
+    参数只有一个时，()可以省略
+    函数体只有一个语句时，{}可以省略
+    ```
+
+    **箭头函数有几个使用注意点**
+    * 函数体内的this对象，绑定定义时所在的对象，而不是使用时所在的对象，**在箭头函数中，它是固定的，不想其他函数可以通过bind设置**。
+    * 不可以当作构造函数，也就是说，不可以使用new命令，否则会抛出一个错误。
+    * 不可以使用arguments对象，该对象在函数体内不存在。如果要用，可以用Rest参数代替。
+    * 不可以使用yield命令，因此箭头函数不能用作Generator函数。
+5.  函数绑定
+    ```
+    foo::bar;
+    // 等同于
+    bar.call(foo);
+
+    foo::bar(...arguments);
+    i// 等同于
+    bar.apply(foo, arguments);
+    ```
+
+### 对象扩展
