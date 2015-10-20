@@ -398,3 +398,120 @@ ECMAScript 6 学习笔记
     ```
 
 ### 对象扩展
+1.  属性的简洁表示法
+    ES6定义对象，允许只写属性名，这时候属性值等于属性名所代表的变量   
+    ```
+    var Person = {
+      name: '张三',
+      //等同于birth: birth
+      birth,
+      // 等同于hello: function ()...
+      hello() { console.log('我的名字是', this.name); }
+    };
+    ```
+
+2.  属性名表达式
+    ES6允许字面量定义对象时，用表达式作为对象的属性名，即把表达式放在方括号内。
+    ```
+    let propKey = 'foo';
+    let obj = {
+      [propKey]: true,
+      ['a' + 'bc']: 123
+    };
+    ```
+3.  方法的name属性
+    ```
+    var person = {
+      sayName: function() {
+        console.log(this.name);
+      },
+      get firstName() {
+        return "Nicholas"
+      }
+    }
+
+    person.sayName.name   // "sayName"
+    person.firstName.name // "get firstName"
+    (new Function()).name // "anonymous"
+
+    var doSomething = function() {
+      // ...
+    };
+    doSomething.bind().name // "bound doSomething"
+    const key1 = Symbol('description');
+    const key2 = Symbol();
+    let obj = {
+      [key1]() {},
+      [key2]() {},
+    };
+    obj[key1].name // "[description]"
+    obj[key2].name // ""
+    ```
+
+4.  Object.is() 
+    用来比较两个值是否严格相等。它与严格比较运算符（===）的行为基本一致。
+    ```
+    // 不同之处
+    +0 === -0 //true
+    NaN === NaN // false
+
+    Object.is(+0, -0) // false
+    Object.is(NaN, NaN) // true
+    ```
+
+ 5. Object.assign()
+    Object.assign方法用来将源对象（source）的所有可枚举属性，复制到目标对象（target）。它至少需要两个对象作为参数，第一个参数是目标对象，后面的参数都是源对象。它只拷贝自身属性，不可枚举的属性（enumerable为false）和继承的属性不会被拷贝。
+    ```
+    var target = { a: 1, b: 1 };
+    var source1 = { b: 2, c: 2 };
+    var source2 = { c: 3 };
+    Object.assign(target, source1, source2);
+    target // {a:1, b:2, c:3}
+    ```
+
+    对于嵌套的对象，Object.assign的处理方法是替换，而不是添加。
+    ```
+    var target = { a: { b: 'c', d: 'e' } }
+    var source = { a: { b: 'hello' } }
+    Object.assign(target, source)
+    // { a: { b: 'hello' } }
+    // 不会得到{ a: { b: 'hello', d: 'e' } }
+    ```
+
+    **Object.assign的用处**
+    * 为象添加属性和方法
+    ```
+    Object.assign(SomeClass.prototype, {
+      xxx,
+      anotherMethod() {
+        ···
+      }
+    });
+    ```
+
+    * 克隆对象
+    ```
+    function clone(origin) {
+      return Object.assign({}, origin);
+    }
+    // 克隆原型链上的属性    
+    function clone(origin) {
+      let originProto = Object.getPrototypeOf(origin);
+      return Object.assign(Object.create(originProto), origin);
+    }
+    ```
+    * 合并对象
+
+6.  属性的可枚举性
+    描述对象的enumerable属性，称为”可枚举性“，如果该属性为false，就表示某些操作会忽略当前属性。
+
+    **ES5有三个操作会忽略enumerable为false的属性。**
+    * for...in 循环：只遍历对象自身的和继承的可枚举的属性
+    * Object.keys()：返回对象自身的所有可枚举的属性的键名
+    * JSON.stringify()：只串行化对象自身的可枚举的属性
+    **ES6新增了两个操作，会忽略enumerable为false的属性。**
+    * Object.assign()：只拷贝对象自身的可枚举的属性
+    * Reflect.enumerate()：返回所有for...in循环会遍历的属性
+    
+    这五个操作之中，只有for...in和Reflect.enumerate()会返回继承的属性。实际上，引入enumerable的最初目的，就是让某些属性可以规避掉for...in操作。比如，对象原型的toString方法，以及数组的length属性，就通过这种手段，不会被for...in遍历到。
+
