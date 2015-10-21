@@ -500,6 +500,7 @@ ECMAScript 6 学习笔记
       return Object.assign(Object.create(originProto), origin);
     }
     ```
+
     * 合并对象
 
 6.  属性的可枚举性
@@ -515,3 +516,36 @@ ECMAScript 6 学习笔记
     
     这五个操作之中，只有for...in和Reflect.enumerate()会返回继承的属性。实际上，引入enumerable的最初目的，就是让某些属性可以规避掉for...in操作。比如，对象原型的toString方法，以及数组的length属性，就通过这种手段，不会被for...in遍历到。
 
+7.  __proto__属性，Object.setPrototypeOf()，Object.getPrototypeOf()
+    虽然目前，所有浏览器（包括IE11）都支持了__proto__这个属性，无论从语义的角度，还是从兼容性的角度，都不要使用这个属性，而是使用下面的Object.setPrototypeOf()（写操作）、Object.getPrototypeOf()（读操作）、Object.create()（生成操作）代替
+
+    **Object.setPrototypeOf()**
+    ```
+    let proto = {};
+    let obj = { x: 10 };
+    // obj.__proto__ = proto;
+    Object.setPrototypeOf(obj, proto);
+    proto.y = 20;
+    proto.z = 40;
+    obj.x // 10
+    obj.y // 20
+    obj.z // 40
+    ```
+
+    **Object.getPrototypeOf()**
+    ```
+    function Rectangle() {
+    }
+
+    var rec = new Rectangle();
+    Object.getPrototypeOf(rec) === Rectangle.prototype
+    ```
+
+8.  Object.observe()，Object.unobserve()
+    Object.observe方法目前共支持监听六种变化。
+    add：添加属性
+    update：属性值的变化
+    delete：删除属性
+    setPrototype：设置原型
+    reconfigure：属性的attributes对象发生变化
+    preventExtensions：对象被禁止扩展（当一个对象变得不可扩展时，也就不必再监听了）
