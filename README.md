@@ -549,3 +549,245 @@ ECMAScript 6 学习笔记
     setPrototype：设置原型
     reconfigure：属性的attributes对象发生变化
     preventExtensions：对象被禁止扩展（当一个对象变得不可扩展时，也就不必再监听了）
+
+### Symbol
+    ES6引入了一种新的原始数据类型Symbol，表示独一无二的值。它是JavaScript语言的第七种数据类型，前六种是：Undefined、Null、布尔值（Boolean）、字符串（String）、数值（Number）、对象（Object）
+    Symbol不是一个构造器，不能用new操作符。Symbol函数的参数只是表示对当前Symbol值的描述，相同参数的Symbol函数的返回值是不相等的。
+    ```
+    // 传参数是为了在控制台显示，或者转为字符串时，比较容易区分
+    var s1 = Symbol('foo');
+    var s2 = Symbol('bar');
+    s1 // Symbol(foo)
+    s2 // Symbol(bar)
+    s1.toString() // "Symbol(foo)"
+    s2.toString() // "Symbol(bar)"
+
+    ```
+
+    **作为属性名**
+    可以用表达式的地方就可以使用Symbol类型的变量
+    ```
+    var mySymbol = Symbol();
+    // 第一种写法
+    var a = {};
+    a[mySymbol] = 'Hello!';
+    // 第二种写法
+    var a = {
+      [mySymbol]: 'Hello!'
+    };
+    // 第三种写法
+    var a = {};
+    Object.defineProperty(a, mySymbol, { value: 'Hello!' });
+    // 以上写法都得到同样结果
+    a[mySymbol] // "Hello!"
+    
+    // a的结构
+    Object {Symbol(): "Hello!"}
+    ```
+
+    **属性名的遍历**
+    Symbol类型的值作为属性名，该属性不会出现在for...in、for...of循环中，也不会被Object.keys()、Object.getOwnPropertyNames()返回。但是，它也不是私有属性，有一个Object.getOwnPropertySymbols方法，可以获取指定对象的所有Symbol属性名
+    ```
+    var obj = {};
+    var foo = Symbol("foo");
+    Object.defineProperty(obj, foo, {
+      value: "foobar",
+    });
+    for (var i in obj) {
+      console.log(i); // 无输出
+    }
+    Object.getOwnPropertyNames(obj)
+    // []
+    Object.getOwnPropertySymbols(obj)
+    // [Symbol(foo)]
+    ```
+
+    Reflect.ownKeys方法可以返回所有类型的键名，包括常规键名和Symbol键名
+    ```
+    let obj = {
+      [Symbol('my_key')]: 1,
+      enum: 2,
+      nonEnum: 3
+    };
+
+    Reflect.ownKeys(obj)
+    // [Symbol(my_key), 'enum', 'nonEnum']
+    ```
+
+    **Symbol.for()，Symbol.keyFor()**
+    Symbol.for接受一个字符串作为参数，然后搜索有没有以该参数作为名称的Symbol值。如果有，就返回这个Symbol值，否则就新建并返回一个以该字符串为名称的Symbol值
+    ```
+    Symbol.for("bar") === Symbol.for("bar")
+    // true
+    Symbol("bar") === Symbol("bar")
+    // false
+
+    var s1 = Symbol.for("foo");
+    Symbol.keyFor(s1) // "foo"
+    var s2 = Symbol("foo");
+    Symbol.keyFor(s2) // undefined
+    ```
+
+### Proxy
+    Proxy用于修改某些操作的默认行为,Proxy可以理解成，在目标对象之前架设一层“拦截”，外界对该对象的访问，都必须先通过这层拦截，因此提供了一种机制，可以对外界的访问进行过滤和改写。Proxy这个词的原意是代理，用在这里表示由它来“代理”某些操作，可以译为“代理器”。
+    ```
+    var obj = {}; 
+    var proxy = new Proxy(obj, {
+      get: function(target, property) {
+        return 35;
+      }
+    });
+    obj.name  //undefined
+    proxy.name // 35
+    proxy.title // 35
+    ```
+
+    要使得Proxy起作用(handler中重载的方法)，必须针对Proxy实例（上例是proxy对象）进行操作，而不是针对目标对象（上例是空对象）进行操作。支持Proxy支持的拦截操作的属性ES6定义了15个（get set has等）
+
+    **Proxy实例**
+    *get*
+    ```
+    var person = {
+      name: "张三",
+      get age () {
+        return 18;
+      }
+    };
+
+    以上代码等同于
+    "use strict";
+    var person = Object.defineProperties({
+      name: "张三"
+    }, {
+      age: {
+        get: function get() {
+          return 18;
+        },
+        configurable: true,
+        enumerable: true
+      }
+    });
+    // 对象每个属性都可以设置get，set。在赋值和取值是自动调用
+
+    var proxy = new Proxy(person, {
+      get: function(target, property) {
+        if (property in target) {
+          return target[property];
+        } else {
+          throw new ReferenceError("Property \"" + property + "\" does not exist.");
+        }
+      }
+    });
+    // 重写了obj.__proto__.get
+    // 会代理所有属性的getter 
+
+    console.log(person.name) // "张三"
+    console.log(person.age)  // 18
+    console.log(proxy.name) // "张三"
+    console.log(proxy.age) // 18
+    console.log(proxy.address) // 抛出一个错误
+    ```
+
+    *set*
+    set方法用来拦截某个属性的赋值操作。
+    ```
+    let validator = {
+      set: function(obj, prop, value) {
+        if (prop === 'age') {
+          if (!Number.isInteger(value)) {
+            throw new TypeError('The age is not an integer');
+          }
+          if (value > 200) {
+            throw new RangeError('The age seems invalid');
+          }
+        }
+
+        // 对于age以外的属性，直接保存
+        obj[prop] = value;
+      }
+    };
+    let person = new Proxy({}, validator);
+    person.age = 100;
+    person.age // 100
+    person.age = 'young' // 报错
+    person.age = 300 // 报错
+    ```
+
+    *apply*
+    apply方法拦截函数的调用、call和apply操作。代理一个function
+    ```
+    var twice = {
+      apply (target, ctx, args) {
+        return Reflect.apply(...arguments) * 2;
+      }
+    };
+    function sum (left, right) {
+      return left + right;
+    };
+    var proxy = new Proxy(sum, twice);
+    proxy(1, 2) // 6
+    proxy.call(null, 5, 6) // 22
+    proxy.apply(null, [7, 8]) // 30
+    ```
+
+    *has*
+    has方法可以隐藏某些属性，不被in操作符发现。
+
+    *construct*
+    construct方法用于拦截new命令。
+
+    *deleteProperty*
+    deleteProperty方法用于拦截delete操作，如果这个方法抛出错误或者返回false，当前属性就无法被delete命令删除。
+
+    *defineProperty*
+    defineProperty方法拦截了Object.defineProperty操作。
+    ```
+    var handler = {
+      defineProperty (target, key, descriptor) {
+        return false
+      }
+    }
+    var target = {}
+    var proxy = new Proxy(target, handler)
+    proxy.foo = 'bar'
+    // TypeError: proxy defineProperty handler returned false for property '"foo"'
+    ```
+
+    *enumerate*
+    enumerate方法用来拦截for...in循环。注意与Proxy对象的has方法区分，后者用来拦截in操作符，对for...in循环无效。
+    ```
+    var handler = {
+      enumerate (target) {
+        return Object.keys(target).filter(key => key[0] !== '_')[Symbol.iterator]();
+      }
+    }
+    var target = { prop: 'foo', _bar: 'baz', _prop: 'foo' }
+    var proxy = new Proxy(target, handler)
+    for (let key in proxy) {
+      console.log(key);
+    }
+    // "prop"
+    ```
+
+### Reflect
+    * 将Object对象的一些明显属于语言层面的方法，放到Reflect对象上。现阶段，某些方法同时在Object和Reflect对象上部署，未来的新方法将只部署在Reflect对象上。
+
+    * 修改某些Object方法的返回结果，让其变得更合理。比如，Object.defineProperty(obj, name, desc)在无法定义属性时，会抛出一个错误，而Reflect.defineProperty(obj, name, desc)则会返回false。
+
+    * 让Object操作都变成函数行为。某些Object操作是命令式，比如name in obj和delete obj[name]，而Reflect.has(obj, name)和Reflect.deleteProperty(obj, name)让它们变成了函数行为。
+
+    *　Reflect对象的方法与Proxy对象的方法一一对应，只要是Proxy对象的方法，就能在Reflect对象上找到对应的方法。这就让Proxy对象可以方便地调用对应的Reflect方法，完成默认行为，作为修改行为的基础。也就是说，*不管Proxy怎么修改默认行为，你总可以在Reflect上获取默认行为。*
+    ```
+    Proxy(target, {
+      set: function(target, name, value, receiver) {
+        var success = Reflect.set(target,name, value, receiver);
+        if (success) {
+          log('property ' + name + ' on ' + target + ' set to ' + value);
+        }
+        return success;
+      }
+    });
+    ```
+    
+
+
