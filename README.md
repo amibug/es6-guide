@@ -510,6 +510,7 @@ ECMAScript 6 学习笔记
     * for...in 循环：只遍历对象自身的和继承的可枚举的属性
     * Object.keys()：返回对象自身的所有可枚举的属性的键名
     * JSON.stringify()：只串行化对象自身的可枚举的属性
+
     **ES6新增了两个操作，会忽略enumerable为false的属性。**
     * Object.assign()：只拷贝对象自身的可枚举的属性
     * Reflect.enumerate()：返回所有for...in循环会遍历的属性
@@ -786,5 +787,92 @@ Proxy用于修改某些操作的默认行为,Proxy可以理解成，在目标对
     });
     ```
 
+### Set
+*set*
+ES6提供了新的数据结构Set。它类似于数组，但是成员的值都是唯一的，没有重复的值。set内部判断两个值是否不同，使用的算法类似于精确相等运算符（===），这意味着，两个对象总是不相等的。唯一的例外是NaN等于自身（精确相等运算符认为NaN不等于自身）
+
+Set结构的实例有以下属性
+* Set.prototype.constructor：构造函数，默认就是Set函数。
+* Set.prototype.size：返回Set实例的成员总数。
+
+Set实例的方法分为两大类：操作方法（用于操作数据）和遍历方法（用于遍历成员）。下面先介绍四个操作方法。
+* add(value)：添加某个值，返回Set结构本身。
+* delete(value)：删除某个值，返回一个布尔值，表示删除是否成功。
+* has(value)：返回一个布尔值，表示该值是否为Set的成员。
+* clear()：清除所有成员，没有返回值。
+
+*WeakSet*
+WeakSet结构与Set类似，也是不重复的值的集合。但是，它与Set有两个区别。
+首先，WeakSet的成员只能是对象，而不能是其他类型的值。
+其次，WeakSet中的对象都是弱引用，即垃圾回收机制不考虑WeakSet对该对象的引用，也就是说，如果其他对象都不再引用该对象，那么垃圾回收机制会自动回收该对象所占用的内存，不考虑该对象还存在于WeakSet之中。这个特点意味着，无法引用WeakSet的成员，因此WeakSet是不可遍历的。WeakSet的一个用处，是储存DOM节点，而不用担心这些节点从文档移除时，会引发内存泄漏。
+
+### Map
+JavaScript的对象（Object），本质上是键值对的集合（Hash结构），但是只能用字符串当作键。这给它的使用带来了很大的限制。
+```
+var data = {};
+var element = document.getElementById("myDiv");
+
+data[element] = metadata;  
+// 等同于
+data[element.toString()] = metadata;  
+data["[Object HTMLDivElement]"] // metadata
+```
+
+ES6提供了Map数据结构。它类似于对象，也是键值对的集合，但是“键”的范围不限于字符串，各种类型的值（包括对象）都可以当作键。也就是说，Object结构提供了“字符串—值”的对应，Map结构提供了“值—值”的对应，是一种更完善的Hash结构实现。只有对同一个对象的引用，Map结构才将其视为同一个键。
+遍历map
+```
+let map = new Map([
+  ['F', 'no'],
+  ['T',  'yes'],
+]);
+
+for (let key of map.keys()) {
+  console.log(key);
+}
+// "F"
+// "T"
+
+for (let value of map.values()) {
+  console.log(value);
+}
+// "no"
+// "yes"
+
+for (let item of map.entries()) {
+  console.log(item[0], item[1]);
+}
+// "F" "no"
+// "T" "yes"
+
+// 或者
+for (let [key, value] of map.entries()) {
+  console.log(key, value);
+}
+
+// 等同于使用map.entries()
+for (let [key, value] of map) {
+  console.log(key, value);
+}
+
+map.forEach(function(value, key, map)) {
+  console.log("Key: %s, Value: %s", key, value);
+};
+```
+
+*与其他数据结构的互相转换*
+* Map转为数组
+* 数组转为Map
+* Map转为对象
+* 对象转为Map
+* Map转为JSON
+* JSON转为Map
+
+*WeakMap*
+WeakMap结构与Map结构基本类似，唯一的区别是它只接受对象作为键名（null除外），不接受其他类型的值作为键名，而且键名所指向的对象，不计入垃圾回收机制。
 
 
+### Iterator
+* 四种数据集合 Array Object Set Map，
+在ES6中，有三类数据结构原生具备Iterator接口：数组、某些类似数组的对象、Set和Map结构。
+实现了Iterator接口，可以使用for..of..遍历
+ES6规定，默认的Iterator接口部署在数据结构的Symbol.iterator属性，或者说，一个数据结构只要具有Symbol.iterator属性，就可以认为是“可遍历的”（iterable）
