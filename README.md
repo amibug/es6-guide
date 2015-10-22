@@ -439,10 +439,10 @@ ECMAScript 6 学习笔记
     };
     doSomething.bind().name // "bound doSomething"
     const key1 = Symbol('description');
-    const key2 = Symbol();
+    const key2 = Symbol();{},
+
     let obj = {
-      [key1]() {},
-      [key2]() {},
+      [key1]()       [key2]() {},
     };
     obj[key1].name // "[description]"
     obj[key2].name // ""
@@ -551,7 +551,8 @@ ECMAScript 6 学习笔记
     preventExtensions：对象被禁止扩展（当一个对象变得不可扩展时，也就不必再监听了）
 
 ### Symbol
-    ES6引入了一种新的原始数据类型Symbol，表示独一无二的值。它是JavaScript语言的第七种数据类型，前六种是：Undefined、Null、布尔值（Boolean）、字符串（String）、数值（Number）、对象（Object）
+
+ES6引入了一种新的原始数据类型Symbol，表示独一无二的值。它是JavaScript语言的第七种数据类型，前六种是：Undefined、Null、布尔值（Boolean）、字符串（String）、数值（Number）、对象（Object）
     Symbol不是一个构造器，不能用new操作符。Symbol函数的参数只是表示对当前Symbol值的描述，相同参数的Symbol函数的返回值是不相等的。
     ```
     // 传参数是为了在控制台显示，或者转为字符串时，比较容易区分
@@ -585,7 +586,7 @@ ECMAScript 6 学习笔记
     Object {Symbol(): "Hello!"}
     ```
 
-    **属性名的遍历**
+**属性名的遍历**
     Symbol类型的值作为属性名，该属性不会出现在for...in、for...of循环中，也不会被Object.keys()、Object.getOwnPropertyNames()返回。但是，它也不是私有属性，有一个Object.getOwnPropertySymbols方法，可以获取指定对象的所有Symbol属性名
     ```
     var obj = {};
@@ -601,20 +602,18 @@ ECMAScript 6 学习笔记
     Object.getOwnPropertySymbols(obj)
     // [Symbol(foo)]
     ```
-
-    Reflect.ownKeys方法可以返回所有类型的键名，包括常规键名和Symbol键名
-    ```
-    let obj = {
-      [Symbol('my_key')]: 1,
-      enum: 2,
-      nonEnum: 3
-    };
-
+Reflect.ownKeys方法可以返回所有类型的键名，包括常规键名和Symbol键名
+     ```
+        let obj = {
+          [Symbol('my_key')]: 1,
+          enum: 2,
+          nonEnum: 3
+        };
     Reflect.ownKeys(obj)
     // [Symbol(my_key), 'enum', 'nonEnum']
     ```
 
-    **Symbol.for()，Symbol.keyFor()**
+**Symbol.for()，Symbol.keyFor()**
     Symbol.for接受一个字符串作为参数，然后搜索有没有以该参数作为名称的Symbol值。如果有，就返回这个Symbol值，否则就新建并返回一个以该字符串为名称的Symbol值
     ```
     Symbol.for("bar") === Symbol.for("bar")
@@ -629,7 +628,7 @@ ECMAScript 6 学习笔记
     ```
 
 ### Proxy
-    Proxy用于修改某些操作的默认行为,Proxy可以理解成，在目标对象之前架设一层“拦截”，外界对该对象的访问，都必须先通过这层拦截，因此提供了一种机制，可以对外界的访问进行过滤和改写。Proxy这个词的原意是代理，用在这里表示由它来“代理”某些操作，可以译为“代理器”。
+Proxy用于修改某些操作的默认行为,Proxy可以理解成，在目标对象之前架设一层“拦截”，外界对该对象的访问，都必须先通过这层拦截，因此提供了一种机制，可以对外界的访问进行过滤和改写。Proxy这个词的原意是代理，用在这里表示由它来“代理”某些操作，可以译为“代理器”。
     ```
     var obj = {}; 
     var proxy = new Proxy(obj, {
@@ -642,17 +641,17 @@ ECMAScript 6 学习笔记
     proxy.title // 35
     ```
 
-    要使得Proxy起作用(handler中重载的方法)，必须针对Proxy实例（上例是proxy对象）进行操作，而不是针对目标对象（上例是空对象）进行操作。支持Proxy支持的拦截操作的属性ES6定义了15个（get set has等）
+要使得Proxy起作用(handler中重载的方法)，必须针对Proxy实例（上例是proxy对象）进行操作，而不是针对目标对象（上例是空对象）进行操作。支持Proxy支持的拦截操作的属性ES6定义了15个（get set has等）
 
-    **Proxy实例**
+**Proxy实例**
     *get*
-    ```
-    var person = {
-      name: "张三",
-      get age () {
-        return 18;
-      }
-    };
+        ```
+        var person = {
+          name: "张三",
+          get age () {
+            return 18;
+          }
+        };
 
     以上代码等同于
     "use strict";
@@ -770,13 +769,11 @@ ECMAScript 6 学习笔记
     ```
 
 ### Reflect
-    * 将Object对象的一些明显属于语言层面的方法，放到Reflect对象上。现阶段，某些方法同时在Object和Reflect对象上部署，未来的新方法将只部署在Reflect对象上。
 
-    * 修改某些Object方法的返回结果，让其变得更合理。比如，Object.defineProperty(obj, name, desc)在无法定义属性时，会抛出一个错误，而Reflect.defineProperty(obj, name, desc)则会返回false。
-
-    * 让Object操作都变成函数行为。某些Object操作是命令式，比如name in obj和delete obj[name]，而Reflect.has(obj, name)和Reflect.deleteProperty(obj, name)让它们变成了函数行为。
-
-    *　Reflect对象的方法与Proxy对象的方法一一对应，只要是Proxy对象的方法，就能在Reflect对象上找到对应的方法。这就让Proxy对象可以方便地调用对应的Reflect方法，完成默认行为，作为修改行为的基础。也就是说，*不管Proxy怎么修改默认行为，你总可以在Reflect上获取默认行为。*
+* 将Object对象的一些明显属于语言层面的方法，放到Reflect对象上。现阶段，某些方法同时在Object和Reflect对象上部署，未来的新方法将只部署在Reflect对象上。
+* 修改某些Object方法的返回结果，让其变得更合理。比如，Object.defineProperty(obj, name, desc)在无法定义属性时，会抛出一个错误，而Reflect.defineProperty(obj, name, desc)则会返回false。
+* 让Object操作都变成函数行为。某些Object操作是命令式，比如name in obj和delete obj[name]，而Reflect.has(obj, name)和Reflect.deleteProperty(obj, name)让它们变成了函数行为。
+* Reflect对象的方法与Proxy对象的方法一一对应，只要是Proxy对象的方法，就能在Reflect对象上找到对应的方法。这就让Proxy对象可以方便地调用对应的Reflect方法，完成默认行为，作为修改行为的基础。也就是说，*不管Proxy怎么修改默认行为，你总可以在Reflect上获取默认行为。*
     ```
     Proxy(target, {
       set: function(target, name, value, receiver) {
@@ -788,6 +785,6 @@ ECMAScript 6 学习笔记
       }
     });
     ```
-    
+
 
 
