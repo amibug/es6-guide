@@ -876,4 +876,250 @@ WeakMap结构与Map结构基本类似，唯一的区别是它只接受对象作�
 * 四种数据集合 Array Object Set Map，
 在ES6中，有三类数据结构原生具备Iterator接口：数组、某些类似数组的对象、Set和Map结构。
 实现了Iterator接口，可以使用for..of..遍历
-ES6规定，默认的Iterator接口部署在数据结构的Symbol.iterator属性，或者说，一个数据结构只要具有Symbol.iterator属性，就可以认为是“可遍历的”（iterable）
+ES6规定，默认的Iterator接口部署在数据结构的Symbol.iterator属性，或者说，一个数据结构只要具有Symbol.iterator属性，就可以认为是“可遍历的”（iterable） 
+
+```
+var array = [
+  1,
+  2,
+  3
+];
+var iterator = array[Symbol.iterator](); //返回Iterator类型的对象，有next方法
+iterator.next(); // { value=1, done=false}
+iterator.next(); // { value=2 done=false}
+```
+
+### Generator
+*   基本概念
+    Generator函数是一个状态机，封装了多个内部状态。执行Generator函数会返回一个遍历器对象，也就是说，Generator函数除了状态机，还是一个遍历器对象生成函数。返回的遍历器对象，可以依次遍历Generator函数内部的每一个状态。
+
+*   yield
+    Generator函数返回的遍历器对象，只有调用next方法才会遍历下一个内部状态，所以其实提供了一种可以暂停执行的函数。yield语句就是暂停标志。
+    遍历器对象的next方法的运行逻辑如下。
+    1. 遇到yield语句，就暂停执行后面的操作，并将紧跟在yield后面的那个表达式的值，作为返回的对象的value属性值。
+    2. 下一次调用next方法时，再继续往下执行，直到遇到下一个yield语句。
+    3. 如果没有再遇到新的yield语句，就一直运行到函数结束，直到return语句为止，并将return语句后面的表达式的值，作为返回的对象的value属性值。
+    4. 如果该函数没有return语句，则返回的对象的value属性值为undefined。
+*   next方法的参数
+    yield句本身没有返回值，或者说总是返回undefined。next方法可以带一个参数，该参数就会被当作上一个yield语句的返回值。
+    ```
+    function* foo(x) {
+      var y = 2 * (yield (x + 1));
+      var z = yield (y / 3);
+      return (x + y + z);
+    }
+
+    var it = foo(5);
+
+    it.next()
+    // { value:6, done:false }
+    it.next(12)
+    // { value:8, done:false }
+    it.next(13)
+    // { value:42, done:true }
+    ```
+
+*   for...of循环
+    ```
+    function *foo() {
+      yield 1;
+      yield 2;
+      yield 3;
+      yield 4;
+      yield 5;
+      return 6;
+    }
+
+    for (let v of foo()) {
+      console.log(v);
+    }
+    // 1 2 3 4 5
+    ```
+
+    一旦next方法的返回对象的done属性为true，for...of循环就会中止，且不包含该返回对象，所以上面代码的return语句返回的6，不包括在for...of循环之中。
+
+*   yield*语句
+    在Generater函数内部，调用另一个Generator函数
+    yield* 后面可以加Generator执行返回的遍历器对象，或者直接遍历器对象（Array）
+    ```
+    function* foo() {
+      yield 'a';
+      yield 'b';
+    }
+
+    function* bar() {
+      yield 'x';
+      foo();
+      yield 'y';
+    }
+    for (let v of bar()){
+      console.log(v);
+    }
+    // "x"
+    // "a"
+    // "b"
+    // "y"
+    ```
+
+*   应用（Generator可以暂停函数执行，返回任意表达式的值）
+    1. 异步操作的同步化表达
+    ```
+    function* main() {
+      var result = yield request("http://some.url");
+      var resp = JSON.parse(result);
+        console.log(resp.value);
+        }
+
+    function request(url) {
+      makeAjaxCall(url, function(response){
+        it.next(response);
+      });
+    }
+
+    var it = main();
+    it.next();
+    ```
+
+    上面代码的main函数，就是通过Ajax操作获取数据。可以看到，除了多了一个yield，它几乎与同步操作的写法完全一样。注意，makeAjaxCall函数中的next方法，必须加上response参数，因为yield语句构成的表达式，本身是没有值的，总是等于undefined
+
+### Promise
+有了Promise对象，就可以将异步操作以同步操作的流程表达出来，避免了层层嵌套的回调函数。
+Promise对象代表一个异步操作，有三种状态：Pending（进行中）、Resolved（已完成，又称Fulfilled）和Rejected（已失败）。
+一旦状态改变，就不会再变，任何时候都可以得到这个结果。Promise对象的状态改变，只有两种可能：从Pending变为Resolved和从Pending变为Rejected。
+
+Promise构造函数接受一个函数作为参数，该函数的两个参数分别是resolve和reject。它们是两个函数，由JavaScript引擎提供，不用自己部署
+resolve函数的作用是，将Promise对象的状态从“未完成”变为“成功”（即从Pending变为Resolved），在异步操作成功时调用，并将异步操作的结果，作为参数传递出去；reject函数的作用是，将Promise对象的状态从“未完成”变为“失败”（即从Pending变为Rejected），在异步操作失败时调用，并将异步操作报出的错误，作为参数传递出去。
+then方法可以接受两个回调函数作为参数。第一个回调函数是Promise对象的状态变为Resolved时调用，第二个回调函数是Promise对象的状态变为Reject时调用
+
+* Promise对象实现的Ajax操作的例子
+```
+var getJSON = function(url) {
+  var promise = new Promise(function(resolve, reject){
+    var client = new XMLHttpRequest();
+    client.open("GET", url);
+    client.onreadystatechange = handler;
+    client.responseType = "json";
+    client.setRequestHeader("Accept", "application/json");
+    client.send();
+
+    function handler() {
+      if (this.status === 200) {
+        *resolve(this.response);*
+      } else {
+        *reject(new Error(this.statusText));*
+      }
+    };
+  });
+
+  return promise;
+};
+
+getJSON("/posts.json").then(function(json) {
+  console.log('Contents: ' + json);
+}, function(error) {
+  console.error('出错了', error);
+});
+```
+
+resolve函数的参数除了正常的值以外，还可能是另一个Promise实例。
+```
+p1和p2都是Promise的实例，但是p2的resolve方法将p1作为参数，即一个异步操作的结果是返回另一个异步操作。
+注意，这时p1的状态就会传递给p2，也就是说，p1的状态决定了p2的状态。如果p1的状态是Pending，那么p2的回调函数就会等待p1的状态改变
+
+var p1 = new Promise(function (resolve, reject) {
+  setTimeout(() => reject(new Error('fail')), 3000)
+})
+var p2 = new Promise(function (resolve, reject) {
+  setTimeout(() => resolve(p1), 1000)    
+  // p2的状态由p1决定，虽然p2中调用了resolve，p1变为rejected，p2也跟着变为rejected
+})
+p1.then(result => console.log('11'), result => console.log('33'))
+p1.catch(error => console.log(error))
+p2.then(result => console.log('22'), result => console.log('44'))
+p2.catch(error => console.log(error))
+// 33
+// fail
+// 44
+// fail
+p1是一个Promise，3秒之后变为rejected。p2的状态由p1决定，1秒之后，p2调用resolve方法，但是此时p1的状态还没有改变，因此p2的状态也不会变。又过了2秒，p1变为rejected，p2也跟着变为rejected。
+```
+
+* Promise.prototype.then()
+then方法返回的是一个新的Promise实例.
+前一个promise的状态觉得后一个promise的状态，链式调用的时候，前一个回调函数返回的结构作为参数，传入后面那个回调函数。
+```
+getJSON("/post/1.json").then(
+  post => getJSON(post.commentURL)
+).then(
+  comments => console.log("Resolved: ", comments),
+  err => console.log("Rejected: ", err)
+);
+```
+
+* Promise.prototype.catch()
+Promise.prototype.catch方法是.then(null, rejection)的别名，用于指定发生错误时的回调函数。
+```
+p.then((val) => console.log("fulfilled:", val))
+  .catch((err) => console.log("rejected:", err));
+
+// 等同于
+
+p.then((val) => console.log(fulfilled:", val))
+  .then(null, (err) => console.log("rejected:", err));
+```
+
+* Promise.all()
+Promise.all方法用于将多个Promise实例，包装成一个新的Promise实例。
+```
+var p = Promise.all([p1,p2,p3]);
+```
+上面代码中，Promise.all方法接受一个数组作为参数，p1、p2、p3都是Promise对象的实例，如果不是，就会先调用下面讲到的Promise.resolve方法，将参数转为Promise实例，再进一步处理。（Promise.all方法的参数不一定是数组，但是必须具有iterator接口，且返回的每个成员都是Promise实例。）
+
+p的状态由p1、p2、p3决定，分成两种情况。
+1. 只有p1、p2、p3的状态都变成fulfilled，p的状态才会变成fulfilled，此时p1、p2、p3的返回值组成一个数组，传递给p的回调函数。
+2. 只要p1、p2、p3之中有一个被rejected，p的状态就变成rejected，此时第一个被reject的实例的返回值，会传递给p的回调函数。
+
+
+* Promise.race()
+
+Promise.race方法同样是将多个Promise实例，包装成一个新的Promise实例。
+```
+var p = Promise.race([p1,p2,p3]);
+```
+
+上面代码中，只要p1、p2、p3之中有一个实例率先改变状态，p的状态就跟着改变。那个率先改变的Promise实例的返回值，就传递给p的回调函数。
+```
+var p = Promise.race([
+  fetch('/resource-that-may-take-a-while'),
+  new Promise(function (resolve, reject) {
+    setTimeout(() => reject(new Error('request timeout')), 5000)
+  })
+])
+p.then(response => console.log(response))
+p.catch(error => console.log(error))
+```
+
+上面代码中，如果5秒之内fetch方法无法返回结果，变量p的状态就会变为rejected，从而触发catch方法指定的回调函数。
+
+* Promise.resolve()
+```
+Promise.resolve('foo')
+// 等价于
+new Promise(resolve => resolve('foo'))
+```
+
+Promise实例的状态从一生成就是Resolved，所以回调函数会立即执行
+
+* 应用
+加载图片
+我们可以将图片的加载写成一个Promise，一旦加载完成，Promise的状态就发生变化。
+```
+const preloadImage = function (path) {
+  return new Promise(function (resolve, reject) {
+    var image = new Image();
+    image.onload  = resolve;
+    image.onerror = reject;
+    image.src = path;
+  });
+};
+```
