@@ -1123,3 +1123,121 @@ const preloadImage = function (path) {
   });
 };
 ```
+
+
+### 异步操作和Async函数
+ES6诞生以前，异步编程的方法，大概有下面四种。
+    1. 回调函数 (settimeout,  requestanimationframe, readFile)
+    2. 事件监听 (ajax, on-click, on-load) 
+    3. 发布/订阅
+    4. Promise 对象
+
+### Class
+*   基本词法
+    ES5的构造函数Point，对应ES6的Point类的构造方法
+    ```
+    class Point{
+      // ...
+    }
+    typeof Point // "function"
+
+    class Point {
+      constructor(){
+        // ...
+      }
+
+      toString(){
+        // ...
+      }
+
+      toValue(){
+        // ...
+      }
+    }
+
+    // 等同于
+
+    Point.prototype = {
+      constructor(){},
+      toString(){},
+      toValue(){}
+    }
+
+    Point.name // "Point"
+    ```
+
+    prototype对象的constructor属性，直接指向“类”的本身，和ES5的概念是一样的。
+    ```
+    Point.prototype.constructor === Point // true
+    ```
+
+    ES6中，类的内部所有定义的方法，都是不可枚举的（enumerable）。和ES5不一致
+    ```
+    class Point {
+      constructor(x, y) {
+        // ...
+      }
+
+      toString() {
+        // ...
+      }
+    }
+
+    Object.keys(Point.prototype)
+    // []
+    Object.getOwnPropertyNames(Point.prototype)
+    // ["constructor","toString"]
+
+    var Point = function (x, y){
+      // ...
+    }
+
+    Point.prototype.toString = function() {
+      // ...
+    }
+
+    Object.keys(Point.prototype)
+    // ["toString"]
+    Object.getOwnPropertyNames(Point.prototype)
+    // ["constructor","toString"]
+    ```
+
+*   继承
+    ```
+    class ColorPoint extends Point {
+      constructor(x, y, color) {
+        super(x, y); // 调用父类的constructor(x, y)
+        this.color = color;
+      }
+
+      toString() {
+        return this.color + ' ' + super.toString(); // 调用父类的toString()
+      }
+    }
+    ```
+    
+    类的prototype属性和__proto__属性
+    ```
+    class A {
+    }
+
+    class B extends A {
+    }
+
+    B.__proto__ === A // true
+    B.prototype.__proto__ === A.prototype // true
+    ```
+
+    Object.getPrototypeOf方法可以用来从子类上获取父类,判断，一个类是否继承了另一个类。
+    ```
+    Object.getPrototypeOf(ColorPoint) === Point
+    // true
+    ```
+
+*   Mixin模式的实现
+    Mixin模式指的是，将多个类的接口“混入”（mix in）另一个类
+    ```
+    class DistributedEdit extends mix(Loggable, Serializable) {
+      // ...
+    }
+    ```
