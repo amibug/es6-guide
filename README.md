@@ -3,6 +3,8 @@ es6-guide
 
 ECMAScript 6 学习笔记
 
+http://es6.ruanyifeng.com/#docs/style
+
 ### let命令
 1.  let声明的变量，只有所在的代码块内有效，let不像var一样，存在变量提升和函数提升现象
 2.  封闭作用域 只要块级作用域内存在let命令，它所声明的变量，不再受外部的影响，没有声明就不能使用
